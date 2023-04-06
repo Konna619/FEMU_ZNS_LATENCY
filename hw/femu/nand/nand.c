@@ -76,7 +76,7 @@ static void init_qlc_page_pairing(FemuCtrl *n)
     for (i = 0; i < rows - 3; i++) {
         for (j = 0; j < page_per_row; j += 2) {
             int idx = 8 + (i * page_per_row) + j;
-            tlc_tbl[idx] = tlc_tbl[idx+1] = lpflag;
+            qlc_tbl[idx] = qlc_tbl[idx+1] = lpflag;
             lpflag = (lpflag == QLC_UPPER_PAGE) ? QLC_LOWER_PAGE : lpflag + 1;
         }
     }

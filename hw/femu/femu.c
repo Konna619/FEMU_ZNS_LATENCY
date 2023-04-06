@@ -90,6 +90,13 @@ static void nvme_write_bar(FemuCtrl *n, hwaddr offset, uint64_t data, unsigned s
         n->bar.intmc = n->bar.intms;
         break;
     case 0x14:
+        /* If first sending data, then sending enable bit */
+        if (!NVME_CC_EN(data) && !NVME_CC_EN(n->bar.cc) &&
+                !NVME_CC_SHN(data) && !NVME_CC_SHN(n->bar.cc))
+        {
+            n->bar.cc = data;
+        }
+
         if (NVME_CC_EN(data) && !NVME_CC_EN(n->bar.cc)) {
             n->bar.cc = data;
             if (nvme_start_ctrl(n)) {
@@ -325,8 +332,8 @@ static void nvme_ns_init_identify(FemuCtrl *n, NvmeIdNs *id_ns)
     id_ns->mc            = n->mc;
     id_ns->dpc           = n->dpc;
     id_ns->dps           = n->dps;
-    id_ns->dlfeat        = 0x9;
-    id_ns->lbaf[0].lbads = 9;
+    id_ns->dlfeat        = 0x9; 
+    id_ns->lbaf[0].lbads = 9;           // konna : Logic block size
     id_ns->lbaf[0].ms    = 0;
 
     npdg = 1;
