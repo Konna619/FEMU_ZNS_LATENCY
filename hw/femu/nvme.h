@@ -18,6 +18,8 @@
 #include "nand/nand.h"
 #include "timing-model/timing.h"
 
+#define DEBUG_KONNA 0
+
 #define NVME_ID_NS_LBADS(ns)                                                  \
     ((ns)->id_ns.lbaf[NVME_ID_NS_FLBAS_INDEX((ns)->id_ns.flbas)].lbads)
 
@@ -36,7 +38,7 @@
  * Advance Channel latency emulating
  * inhoinno 
  */
-#define ADVANCE_PER_CH_ENDTIME 1
+#define ADVANCE_PER_CH_ENDTIME 0
 
 #define SK_HYNIX_VALIDATION 0
 #define MK_ZONE_CONVENTIONAL 0

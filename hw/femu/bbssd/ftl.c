@@ -255,12 +255,18 @@ static void check_params(struct ssdparams *spp)
 static void ssd_init_params(struct ssdparams *spp)
 {
     spp->secsz = 512;
+    // spp->secs_per_pg = 8;   //page size : 4KB  
+    // spp->pgs_per_blk = 256; //block size : 1MB   
+    // spp->blks_per_pl = 32; //plane size = 32MB  
+    // spp->pls_per_lun = 16;   //lun size = 512MB     
+    // spp->luns_per_ch = 2;   //2way      >> 1 Inhoinno
+    // spp->nchs = 16;         //ssd, 16GB        
     spp->secs_per_pg = 8;   //page size : 4KB  
     spp->pgs_per_blk = 256; //block size : 1MB   
-    spp->blks_per_pl = 32; //plane size = 32MB  
-    spp->pls_per_lun = 16;   //lun size = 512MB     
-    spp->luns_per_ch = 2;   //2way      >> 1 Inhoinno
-    spp->nchs = 16;         //ssd, 16GB          
+    spp->blks_per_pl = 256; //plane size = 32MB  
+    spp->pls_per_lun = 1;   //lun size = 512MB     
+    spp->luns_per_ch = 8;   //2way      >> 1 Inhoinno
+    spp->nchs = 8;         //ssd, 16GB           
 
     spp->pg_rd_lat = NAND_READ_LATENCY;
     spp->pg_wr_lat = NAND_PROG_LATENCY;
@@ -771,7 +777,7 @@ static int do_gc(struct ssd *ssd, bool force)
 
     victim_line = select_victim_line(ssd, force);
     if (!victim_line) {
-        femu_err("FTL.c : 770 but GC doesn't happend to Inhoinno\n");
+        // femu_err("FTL.c : 770 but GC doesn't happend to Inhoinno\n");
         return -1;
     }
 
@@ -791,7 +797,7 @@ static int do_gc(struct ssd *ssd, bool force)
             mark_block_free(ssd, &ppa);
 
             if (spp->enable_gc_delay) {
-                femu_err("FTL.c : 790 GC happend to Inhoinno\n");
+                // femu_err("FTL.c : 790 GC happend to Inhoinno\n");
                 struct nand_cmd gce;
                 gce.type = GC_IO;
                 gce.cmd = NAND_ERASE;
@@ -873,7 +879,7 @@ static uint64_t ssd_write(struct ssd *ssd, NvmeRequest *req)
 
     while (should_gc_high(ssd)) {
         /* perform GC here until !should_gc(ssd) */
-        femu_err("In FTL.c :870 in ssd_write, GC triggered, to inhoinno");
+        // femu_err("In FTL.c :870 in ssd_write, GC triggered, to inhoinno");
         r = do_gc(ssd, true);
         if (r == -1)
             break;
@@ -938,10 +944,10 @@ static void *ftl_thread(void *arg)
             if (rc != 1) {
                 printf("FEMU: FTL to_ftl dequeue failed\n");
             }
-            ssd->sp.enable_gc_delay=true;
+            // ssd->sp.enable_gc_delay=true; konna：wtf?
             ftl_assert(req);
-            if(!ssd->sp.enable_gc_delay)
-                femu_err("In FTL.c :937 ssd->sp.enable_gc_delay=false, to inhoinno");
+            // if(!ssd->sp.enable_gc_delay)
+            //     femu_err("In FTL.c :937 ssd->sp.enable_gc_delay=false, to inhoinno");
             switch (req->cmd.opcode) {
             case NVME_CMD_WRITE:
                 lat = ssd_write(ssd, req);
@@ -970,7 +976,7 @@ static void *ftl_thread(void *arg)
 
             /* clean one line if needed (in the background) */
             if (should_gc(ssd)) {
-                femu_err("In ftl.c:965 gc processed, to Inhoinno\n");
+                // femu_err("In ftl.c:965 gc processed, to Inhoinno\n");
                 do_gc(ssd, false);
             }
         }

@@ -1,6 +1,8 @@
 #include "../nvme.h"
 
+#if DEBUG_KONNA
 extern bool test_flag;
+#endif
 
 /* Coperd: FEMU Memory Backend (mbe) for emulated SSD */
 
@@ -48,6 +50,7 @@ int backend_rw(SsdDramBackend *b, QEMUSGList *qsg, uint64_t *lbal, bool is_write
         if (dma_memory_rw(qsg->as, cur_addr, mb + mb_oft, cur_len, dir, MEMTXATTRS_UNSPECIFIED)) {
             error_report("FEMU: dma_memory_rw error");
         }
+#if DEBUG_KONNA
         if(test_flag){
             if(is_write){
                 femu_log("%s : write data to mb_oft=%lu len=%lu \n", __func__, mb_oft, cur_len);
@@ -55,7 +58,7 @@ int backend_rw(SsdDramBackend *b, QEMUSGList *qsg, uint64_t *lbal, bool is_write
                 femu_log("%s : read data from mb_oft=%lu len=%lu \n", __func__, mb_oft, cur_len);
             }
         }
-
+#endif
 
         sg_cur_byte += cur_len;
         if (sg_cur_byte == qsg->sg[sg_cur_index].len) {

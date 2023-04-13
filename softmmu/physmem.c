@@ -80,7 +80,11 @@
 #endif
 
 //#define DEBUG_SUBPAGE
+
+#include "hw/femu/nvme.h"
+#if DEBUG_KONNA
 extern bool test_flag;
+#endif
 
 /* ram_list is read under rcu_read_lock()/rcu_read_unlock().  Writes
  * are protected by the ramlist lock.
@@ -2801,7 +2805,9 @@ static MemTxResult flatview_write_continue(FlatView *fv, hwaddr addr,
     MemTxResult result = MEMTX_OK;
     bool release_lock = false;
     const uint8_t *buf = ptr;
+#if DEBUG_KONNA
     char test_buf[64] = {""};
+#endif
 
     for (;;) {
         if (!flatview_access_allowed(mr, attrs, addr1, l)) {
@@ -2819,6 +2825,7 @@ static MemTxResult flatview_write_continue(FlatView *fv, hwaddr addr,
             /* RAM case */
             ram_ptr = qemu_ram_ptr_length(mr->ram_block, addr1, &l, false);
             memcpy(ram_ptr, buf, l);
+#if DEBUG_KONNA
             if(test_flag){
                 test_flag = false;
                 memcpy(test_buf, buf, 64);
@@ -2827,6 +2834,7 @@ static MemTxResult flatview_write_continue(FlatView *fv, hwaddr addr,
                 printf("[%s]\n", test_buf);
                 printf("read device here -------------------------------------------\n");
             }
+#endif
             invalidate_and_set_dirty(mr, addr1, l);
         }
 
@@ -2878,7 +2886,9 @@ MemTxResult flatview_read_continue(FlatView *fv, hwaddr addr,
     MemTxResult result = MEMTX_OK;
     bool release_lock = false;
     uint8_t *buf = ptr;
+#if DEBUG_KONNA
     char test_buf[64] = {""};
+#endif
 
     fuzz_dma_read_cb(addr, len, mr);
     for (;;) {
@@ -2896,6 +2906,7 @@ MemTxResult flatview_read_continue(FlatView *fv, hwaddr addr,
             /* RAM case */
             ram_ptr = qemu_ram_ptr_length(mr->ram_block, addr1, &l, false);
             memcpy(buf, ram_ptr, l);
+#if DEBUG_KONNA
             if(test_flag){
                 test_flag = false;
                 memcpy(test_buf, ram_ptr, 64);
@@ -2904,6 +2915,7 @@ MemTxResult flatview_read_continue(FlatView *fv, hwaddr addr,
                 printf("[%s]\n", test_buf);
                 printf("write device here -------------------------------------------\n");
             }
+#endif
         }
 
         if (release_lock) {

@@ -133,3 +133,4 @@ trace-ust-all.c
 build-femu/
 build-femu_bak/
 .vscode/settings.json
+.vscode/c_cpp_properties.json

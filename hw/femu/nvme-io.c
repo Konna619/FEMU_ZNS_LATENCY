@@ -82,6 +82,7 @@ static void nvme_process_sq_io(void *opaque, int index_poller)
             /* Normal I/Os that don't need delay emulation */
             req->status = status;
         } else {
+            req->status = status;
             femu_err("Error IO processed!\n");
         }
 
@@ -191,7 +192,7 @@ static void *nvme_poller(void *arg)
 {
     FemuCtrl *n = ((NvmePollerThreadArgument *)arg)->n;
     int index = ((NvmePollerThreadArgument *)arg)->index;
-    int i=0;
+    // int i=0;
     switch (n->multipoller_enabled) {
     case 1:
         while (1) {
@@ -199,7 +200,7 @@ static void *nvme_poller(void *arg)
                 usleep(1000);
                 continue;
             }
-            i++;
+            // i++;
             NvmeSQueue *sq = n->sq[index];
             NvmeCQueue *cq = n->cq[index];
             if (sq && sq->is_active && cq && cq->is_active) {
@@ -214,7 +215,7 @@ static void *nvme_poller(void *arg)
                 usleep(1000);
                 continue;
             }
-            i++;
+            // i++;
 
             for (int i = 1; i <= n->num_io_queues; i++) {
                 NvmeSQueue *sq = n->sq[i];
@@ -261,7 +262,7 @@ void nvme_create_poller(FemuCtrl *n)
 
     n->should_isr = g_malloc0(sizeof(bool) * (n->num_io_queues + 1));
 
-    n->num_poller = n->multipoller_enabled ? n->num_io_queues : 1;
+    n->num_poller = n->multipoller_enabled ? n->num_io_queues : 1;  // konna : 默认为8 DEFINE_PROP_UINT32("queues", FemuCtrl, num_io_queues, 8),
     /* Coperd: we put NvmeRequest into these rings */
     n->to_ftl = malloc(sizeof(struct rte_ring *) * (n->num_poller + 1));
     for (int i = 1; i <= n->num_poller; i++) {

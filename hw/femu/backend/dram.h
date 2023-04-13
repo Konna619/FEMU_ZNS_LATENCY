@@ -15,6 +15,7 @@ typedef struct SsdDramBackend {
  * @@ 
  * 
  * */
+ //konna ：没用到
 typedef struct ZnsSsdDramBackend {
     void    *logical_space;
     int64_t size; /* in bytes */

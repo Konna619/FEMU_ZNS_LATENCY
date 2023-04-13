@@ -3,8 +3,12 @@
 #define MIN_DISCARD_GRANULARITY     (4 * KiB)
 #define NVME_DEFAULT_ZONE_SIZE      (64 * MiB)
 #define NVME_DEFAULT_MAX_AZ_SIZE    (128 * KiB)
+
 uint64_t lag = 0;
+
+#if DEBUG_KONNA
 bool test_flag = false;
+#endif
 
 // 计算slba在哪个zone
 static inline uint32_t zns_zone_idx(NvmeNamespace *ns, uint64_t slba)
@@ -437,7 +441,7 @@ static uint16_t zns_check_zone_write(FemuCtrl *n, NvmeNamespace *ns,
                                       uint32_t nlb, bool append)
 {
     uint16_t status;
-    uint32_t zidx = zns_zone_idx(ns, slba);
+    // uint32_t zidx = zns_zone_idx(ns, slba);
     if (unlikely((slba + nlb) > zns_zone_wr_boundary(zone))) {
         status = NVME_ZONE_BOUNDARY_ERROR;
     } else {
@@ -457,9 +461,9 @@ static uint16_t zns_check_zone_write(FemuCtrl *n, NvmeNamespace *ns,
                 femu_err("%s : append size=%lu > zasl=%u \n", __func__, zns_l2b(ns, nlb), (n->page_size << n->zasl));
                 status = NVME_INVALID_FIELD;
             }
-            if((zidx == 0) || (zidx == 1) || (zidx == 2) || (zidx == 3)){
-                femu_err("[inho] zns.c:406 append wp error(%d) in zidx=%d\n",status, zidx);
-            }
+            // if((zidx == 0) || (zidx == 1) || (zidx == 2) || (zidx == 3)){
+            //     femu_err("[inho] zns.c:406 append wp error(%d) in zidx=%d\n",status, zidx);
+            // }
         } else if (unlikely(slba != zone->w_ptr)) {
             
             status = NVME_ZONE_INVALID_WRITE;   
@@ -975,7 +979,7 @@ static uint16_t zns_zone_mgmt_send(FemuCtrl *n, NvmeRequest *req)
         }
         *resets = 1;
         status = zns_do_zone_op(ns, zone, proc_mask, zns_reset_zone, req);
-        req->expire_time += zns_advance_status(n, ns, cmd, req);
+        req->expire_time += zns_advance_status(n, ns, cmd, req); // konna : 这里加延迟
         (*resets)--;
         return NVME_SUCCESS;
     case NVME_ZONE_ACTION_OFFLINE:
@@ -1197,7 +1201,9 @@ static uint16_t zns_do_write(FemuCtrl *n, NvmeRequest *req, bool append,
     assert(n->zoned);
     req->is_write = true;
 
+#if DEBUG_KONNA
     femu_log("%s : start append slba=%ld nlb=%d\n", __func__, slba, nlb);
+#endif
 
     if (!wrz) {
         status = nvme_check_mdts(n, data_size);
@@ -1244,7 +1250,10 @@ static uint16_t zns_do_write(FemuCtrl *n, NvmeRequest *req, bool append,
         }
         
         req->expire_time += zns_advance_status(n,ns,&req->cmd,req);
+#if DEBUG_KONNA
         test_flag = true;
+#endif
+
         backend_rw(n->mbe, &req->qsg, &data_offset, req->is_write);
     }
 
@@ -1416,8 +1425,8 @@ static int zns_advance_status(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd, Nvme
     // Read, Write 
     assert(opcode == NVME_CMD_WRITE || opcode == NVME_CMD_READ || opcode == NVME_CMD_ZONE_APPEND);
     if(req->is_write)
-        return znsssd_write(n->zns, req);
-    return znsssd_read(n->zns, req);
+        return znsssd_write(n->zns, req);// konna : 计算延迟
+    return znsssd_read(n->zns, req);// konna : 计算延迟
 }
 
 static uint16_t zns_read(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
@@ -1514,7 +1523,9 @@ static uint16_t zns_write(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
     NvmeZonedResult *res = (NvmeZonedResult *)&req->cqe;
     uint16_t status;
 
+#if DEBUG_KONNA
     femu_log("%s : start write slba=%ld nlb=%d\n", __func__, slba, nlb);
+#endif
 
     assert(n->zoned);
     req->is_write = true;
@@ -1551,7 +1562,9 @@ static uint16_t zns_write(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
         goto err;
     }
     req->expire_time += zns_advance_status(n,ns,cmd,req);
+#if DEBUG_KONNA
     test_flag = true;
+#endif
     backend_rw(n->mbe, &req->qsg, &data_offset, req->is_write);
     zns_finalize_zoned_write(ns, req, false);
 
