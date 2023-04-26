@@ -1311,6 +1311,8 @@ typedef struct FemuCtrl {
     uint8_t         lver; /* Coperd: OCSSD version, 0x1 -> OC1.2, 0x2 -> OC2.0 */
     uint32_t        memsz;
     OcCtrlParams    oc_params;
+    // ggboy: add zone size option to femu
+    uint32_t        zone_sz;
 
     Oc12Ctrl  *oc12_ctrl;
     volatile int64_t chip_next_avail_time[FEMU_MAX_NUM_CHIPS];

@@ -29,7 +29,9 @@ static inline uint64_t hynix_zns_get_ppn(NvmeNamespace *ns, uint64_t slba){
     FemuCtrl *n = ns->ctrl;
     struct zns * zns = n->zns;
     struct zns_ssdparams *spp = &zns->sp;
-    uint64_t zsze = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
+    // uint64_t zsze = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
+    // ggboy: add zone size option to femu
+    uint64_t zsze = (n->zone_sz) * MiB / MIN_DISCARD_GRANULARITY;
     uint64_t slpa = slba >> 3;
     uint64_t zidx= zns_zone_idx(ns, slba);
     uint64_t s_iter = zidx / (spp->ways * spp->nchnls);
@@ -53,8 +55,9 @@ static inline uint64_t bak_zns_get_multiway_ppn_idx(NvmeNamespace *ns, uint64_t 
     FemuCtrl *n = ns->ctrl;
     struct zns * zns = n->zns;
     struct zns_ssdparams *spp = &zns->sp;
-    uint64_t zone_size = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
- 
+    // uint64_t zone_size = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
+    // ggboy: add zone size option to femu
+    uint64_t zone_size = (n->zone_sz) * MiB / MIN_DISCARD_GRANULARITY;
     uint64_t zidx= zns_zone_idx(ns, slba);
     uint64_t slpa = slba >> 3; //slba >> (22) << (19)
 
@@ -76,15 +79,17 @@ static inline uint64_t zns_get_multiway_ppn_idx(NvmeNamespace *ns, uint64_t slba
     FemuCtrl *n = ns->ctrl;
     struct zns * zns = n->zns;
     struct zns_ssdparams *spp = &zns->sp;
-    uint64_t zone_size = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
+    // uint64_t zone_size = NVME_DEFAULT_ZONE_SIZE / MIN_DISCARD_GRANULARITY;
+    // ggboy: add zone size option to femu
+    uint64_t zone_size = (n->zone_sz) * MiB / MIN_DISCARD_GRANULARITY;
     uint64_t degree = spp->chnls_per_zone;  // w.r.t 1-to-N mapping 
     uint64_t way    = spp->ways;
     uint64_t zone_idx = zns_zone_idx(ns, slba);
     uint64_t slpa = slba >> 3; //slba >> (22) << (19)
 
-    uint64_t b_iter         =zone_idx % (spp->nchnls / degree);
-    uint64_t b_iter_value   =spp->csze_pages * degree;
-    uint64_t b_mod          =(zone_idx * degree / spp->nchnls)*(zone_size/way/degree);
+    uint64_t b_iter         =zone_idx % (spp->nchnls / degree); // zone在第几组channels中
+    uint64_t b_iter_value   =spp->csze_pages * degree;          // zone跨channel数 * 每way页数
+    uint64_t b_mod          =(zone_idx * degree / spp->nchnls)*(zone_size/way/degree); // zone所在层数 * 每个way管一个zone的页数
     uint64_t base           =(b_iter * b_iter_value) + b_mod;
 
     uint64_t iter           =(slpa / degree) % way;
@@ -150,7 +155,9 @@ static int zns_init_zone_geometry(NvmeNamespace *ns, Error **errp)
     if (n->zone_size_bs) {
         zone_size = n->zone_size_bs;
     } else {
-        zone_size = NVME_DEFAULT_ZONE_SIZE;
+        // zone_size = NVME_DEFAULT_ZONE_SIZE;
+        // ggboy: add zone size option to femu
+        zone_size = (ns->ctrl->zone_sz) * MiB;
     }
 
     if (n->zone_cap_bs) {
@@ -1617,7 +1624,9 @@ static int zns_init_zone_cap(FemuCtrl *n)
 {
     n->zoned = true;
     n->zasl_bs = NVME_DEFAULT_MAX_AZ_SIZE;
-    n->zone_size_bs = NVME_DEFAULT_ZONE_SIZE;
+    // n->zone_size_bs = NVME_DEFAULT_ZONE_SIZE;
+    // ggboy: add zone size option to femu
+    n->zone_size_bs = (n->zone_sz) * MiB;
     n->zone_cap_bs = 0;
     n->cross_zone_read = false;
     n->max_active_zones = 0;
@@ -1670,7 +1679,7 @@ static void znsssd_init_params(FemuCtrl * n, struct zns_ssdparams *spp){
     */
     spp->nchnls         = 16;           /* FIXME : = ZNS_MAX_CHANNEL channel configuration like this */
     spp->zones          = n->num_zones; 
-    spp->chnls_per_zone = 1;
+    spp->chnls_per_zone = 4;
     spp->ways           = 2;
     
     /* TO REAL STORAGE SIZE */
