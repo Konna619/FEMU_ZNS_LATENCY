@@ -263,9 +263,9 @@ static void ssd_init_params(struct ssdparams *spp)
     // spp->nchs = 16;         //ssd, 16GB        
     spp->secs_per_pg = 8;   //page size : 4KB  
     spp->pgs_per_blk = 256; //block size : 1MB   
-    spp->blks_per_pl = 256; //plane size = 32MB  
-    spp->pls_per_lun = 1;   //lun size = 512MB     
-    spp->luns_per_ch = 8;   //2way      >> 1 Inhoinno
+    spp->blks_per_pl = 256; //plane size = 256MB  
+    spp->pls_per_lun = 1;   //lun size = 256MB     
+    spp->luns_per_ch = 8;   //  2GB
     spp->nchs = 8;         //ssd, 16GB           
 
     spp->pg_rd_lat = NAND_READ_LATENCY;
